@@ -5,6 +5,8 @@ import os
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import unquote
 
+SVR_N_PORT: tuple[str, int]= ("127.0.0.1", 8080)
+
 class SimpleHandler(BaseHTTPRequestHandler):
     def _serve_file(self, file_path: str) -> None:
         """
@@ -45,9 +47,11 @@ class SimpleHandler(BaseHTTPRequestHandler):
             self.send_error(500, f"Could not list directory: {exc}")
             return
 
+        entries = filter(lambda n: not n.startswith('.'), entries)
+
         # Build a minimal HTML table ------------------------------------
         rows = [
-            f'<tr><td>{name}</td></tr>' for name in sorted(entries)
+            f'<tr><td><a href="{name}">{name}</a></td></tr>' for name in sorted(entries)
         ]
         html_body = (f"""
             <!DOCTYPE html>
@@ -56,7 +60,7 @@ class SimpleHandler(BaseHTTPRequestHandler):
             <title>Directory listing</title>
             </head><body>
             <h1>Listing of {short[len(short) - 1]}</h1>
-            <table border='1'>
+            <table>
             {"".join(rows)}
             </table></body></html>"""
         ).encode("utf-8")
@@ -124,7 +128,7 @@ class SimpleHandler(BaseHTTPRequestHandler):
         self.send_error(404, f"Page not found: {self.path}")
 
 def dummy_srv(server_class=HTTPServer, handler_class=SimpleHandler):
-    server_address = ('127.0.0.1', 8080)
+    server_address = SVR_N_PORT
     httpd = server_class(server_address, handler_class)
     #handler_class.handle
     try:
